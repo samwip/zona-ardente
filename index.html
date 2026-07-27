@@ -507,9 +507,22 @@
           window.__resolveDiscordReady(); // libera o carregamento de imagens agora que já reescreveu as URLs
 
           const discordSdk = new DiscordSDK('1531189755935592520');
-          await discordSdk.ready();
-          console.log('✅ Rodando dentro do Discord como Activity');
-          document.body.classList.add('in-discord');
+await discordSdk.ready();
+
+// Configura o status como estático para o Discord não tratar como partida/lobby
+try {
+  await discordSdk.commands.setActivity({
+    activity: {
+      details: "Consultando Itens",
+      state: "No Catálogo",
+    },
+  });
+} catch (err) {
+  console.log("Erro ao definir atividade:", err);
+}
+
+console.log('✅ Rodando dentro do Discord como Activity');
+document.body.classList.add('in-discord');
         } catch (e) {
           console.warn('Discord SDK não inicializou:', e);
           window.__resolveDiscordReady(); // libera mesmo se der erro, pra não travar o site pra sempre
