@@ -233,7 +233,12 @@
 
 <script src="script.js"></script>
 <script>
-  const IMG_SOURCES = [
+  const inDiscordFrame = window.location !== window.parent.location;
+  const IMG_SOURCES = inDiscordFrame ? [
+    { base: '/ff-cdn/gh/ShahGCreator/icon@main/PNG/', key: 'id' },
+    { base: '/ff-icon/common/Local/PK/FF_UI_Icon/', key: 'icon' },
+    { base: '/ff-icon2/common/Local/PK/FF_UI_Icon/', key: 'icon' }
+  ] : [
     { base: 'https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/', key: 'id' },
     { base: 'https://dl.dir.freefiremobile.com/common/Local/PK/FF_UI_Icon/', key: 'icon' },
     { base: 'https://freefiremobile-a.akamaihd.net/common/Local/PK/FF_UI_Icon/', key: 'icon' }
@@ -303,28 +308,26 @@
     const icon = thumbEl.dataset.icon;
     const id = thumbEl.dataset.id;
     if ((!icon || icon === 'NONE') && !id) return;
-    window.__discordReady.then(() => {
-      let srcIndex = 0;
-      const tryNext = () => {
-        if (srcIndex >= IMG_SOURCES.length) {
-          const fallbackUrl = IMG_SOURCES[0].base + id + '.png';
-          thumbEl.innerHTML = `<a href="${fallbackUrl}" target="_blank" rel="noopener" class="ph" style="text-decoration:underline;">sem imagem<br>(abrir url)</a>`;
-          return;
-        }
-        const source = IMG_SOURCES[srcIndex];
-        const key = source.key === 'id' ? id : icon;
-        if (!key || key === 'NONE') { srcIndex++; tryNext(); return; }
-        const url = source.base + key + '.png';
-        const testImg = new Image();
-        testImg.referrerPolicy = 'no-referrer';
-        testImg.decoding = 'async';
-        testImg.alt = '';
-        testImg.onload = () => { thumbEl.innerHTML=''; thumbEl.appendChild(testImg); };
-        testImg.onerror = () => { srcIndex++; tryNext(); };
-        testImg.src = url;
-      };
-      tryNext();
-    });
+    let srcIndex = 0;
+    const tryNext = () => {
+      if (srcIndex >= IMG_SOURCES.length) {
+        const fallbackUrl = IMG_SOURCES[0].base + id + '.png';
+        thumbEl.innerHTML = `<a href="${fallbackUrl}" target="_blank" rel="noopener" class="ph" style="text-decoration:underline;">sem imagem<br>(abrir url)</a>`;
+        return;
+      }
+      const source = IMG_SOURCES[srcIndex];
+      const key = source.key === 'id' ? id : icon;
+      if (!key || key === 'NONE') { srcIndex++; tryNext(); return; }
+      const url = source.base + key + '.png';
+      const testImg = new Image();
+      testImg.referrerPolicy = 'no-referrer';
+      testImg.decoding = 'async';
+      testImg.alt = '';
+      testImg.onload = () => { thumbEl.innerHTML=''; thumbEl.appendChild(testImg); };
+      testImg.onerror = () => { srcIndex++; tryNext(); };
+      testImg.src = url;
+    };
+    tryNext();
   }
 
   const thumbObserver = new IntersectionObserver((entries) => {
