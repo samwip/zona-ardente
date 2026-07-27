@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>Free Fire Item — Busca de Itens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://dl.dir.freefiremobile.com">
+<link rel="preconnect" href="https://freefiremobile-a.akamaihd.net">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .item-card{ position:relative; padding:8px; display:flex; flex-direction:column; gap:5px; }
+  .item-thumb{
+    aspect-ratio:1; background:var(--bg-panel-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;
+  }
+  .item-thumb img{ max-width:82%; max-height:82%; object-fit:contain; }
+  .item-thumb .ph{ font-family:var(--font-mono); font-size:.62rem; color:var(--text-faint); text-align:center; padding:8px; }
+  .item-name{ font-size:.72rem; line-height:1.25; min-height:1.9em; }
+  .item-meta{ display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:.56rem; }
+  .item-id{ color:var(--text-faint); }
+  .rare-badge{ padding:2px 7px; border-radius:2px; text-transform:uppercase; letter-spacing:.03em; }
+  #itemsGrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(95px,1fr)); gap:8px; }
+  @media (min-width:1400px){ #itemsGrid{ grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); } }
+  .rarity-select{
+    background:var(--bg-panel); border:1px solid var(--line-bright); color:var(--text);
+    font-family:var(--font-mono); font-size:.78rem; padding:9px 14px; border-radius:999px;
+  }
+  .item-card{ cursor:pointer; transition:border-color .15s, transform .15s, box-shadow .15s; }
+  .item-card:hover{ transform:translateY(-2px); }
+
+  #pagination{
+    display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;
+    padding:40px 0 100px;
+  }
+  .page-btn{
+    min-width:38px; height:38px; padding:0 10px; display:inline-flex; align-items:center; justify-content:center;
+    background:var(--bg-panel); border:1px solid var(--line-bright); color:var(--text-dim);
+    font-family:var(--font-mono); font-size:.82rem; cursor:pointer; transition:all .15s;
+  }
+  .page-btn:hover{ border-color:var(--fire); color:var(--text); }
+  .page-btn.active{ background:var(--fire); border-color:var(--fire); color:#160B05; font-weight:700; }
+  .page-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .page-btn:disabled:hover{ border-color:var(--line-bright); color:var(--text-dim); }
+  .page-dots{ color:var(--text-faint); font-family:var(--font-mono); padding:0 4px; }
+  .page-jump{
+    display:flex; align-items:center; gap:6px; margin-left:10px;
+    font-family:var(--font-mono); font-size:.75rem; color:var(--text-faint);
+  }
+  .page-jump input{
+    width:60px; background:var(--bg-panel); border:1px solid var(--line-bright); color:var(--text);
+    padding:8px; font-family:var(--font-mono); font-size:.8rem; text-align:center;
+  }
+
+  #itemModalOverlay{
+    display:none; position:fixed; inset:0; background:rgba(6,7,10,.78);
+    z-index:100; align-items:center; justify-content:center; padding:20px;
+  }
+  #itemModalOverlay.open{ display:flex; }
+  #itemModal{
+    background:var(--bg-panel); border:1px solid var(--line-bright); clip-path:var(--clip);
+    max-width:460px; width:100%; padding:28px; position:relative;
+  }
+  #itemModalClose{
+    position:absolute; top:16px; right:18px; background:none; border:none; color:var(--text-faint);
+    font-size:1.3rem; cursor:pointer; line-height:1;
+  }
+  #itemModalClose:hover{ color:var(--fire); }
+  .modal-thumb{
+    width:140px; height:140px; margin:0 auto 20px; background:var(--bg-panel-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .modal-thumb img{ max-width:82%; max-height:82%; object-fit:contain; }
+  .copy-row{
+    display:flex; align-items:center; gap:10px; background:var(--bg-panel-2); border:1px solid var(--line);
+    padding:10px 12px; margin-top:8px;
+  }
+  .copy-row span{ font-family:var(--font-mono); font-size:.85rem; flex:1; word-break:break-all; }
+  .copy-btn{
+    background:transparent; border:1px solid var(--line-bright); color:var(--text-dim);
+    font-family:var(--font-mono); font-size:.7rem; text-transform:uppercase; padding:6px 10px;
+    cursor:pointer; white-space:nowrap; transition:all .15s;
+  }
+  .copy-btn:hover{ border-color:var(--signal); color:var(--signal); }
+  .copy-btn.copied{ border-color:var(--fire); color:var(--fire); }
+</style>
+</head>
+<body>
+
+<nav style="position:sticky; top:0; z-index:90; border-bottom:1px solid var(--line); backdrop-filter:blur(20px); background:rgba(14,16,22,.85);">
+  <div style="max-width:1200px; margin:0 auto; padding:0 2rem; height:64px; display:flex; align-items:center; justify-content:space-between;">
+    <div style="font-family:var(--font-display); font-weight:800; font-size:1.1rem; letter-spacing:-.02em;">Free<span style="color:var(--fire);">Item</span></div>
+    <div style="font-family:var(--font-mono); font-size:.62rem; letter-spacing:.15em; color:var(--fire); display:flex; align-items:center; gap:.4rem;">
+      <span style="width:6px; height:6px; background:var(--fire); border-radius:50%;"></span>ONLINE
+    </div>
+  </div>
+</nav>
+
+<main class="wrap" style="padding-top:0;">
+  <section style="text-align:center; padding:6rem 2rem 4rem; position:relative; overflow:hidden;">
+    <div style="position:absolute; inset:0; background:radial-gradient(650px circle at 50% 0%, rgba(162,56,255,.25), transparent 62%); pointer-events:none;"></div>
+    <div style="display:inline-flex; align-items:center; gap:.5rem; font-family:var(--font-mono); font-size:.65rem; letter-spacing:.2em; color:var(--fire); border:1px solid rgba(162,56,255,.35); padding:.35rem .9rem; background:rgba(162,56,255,.06); margin-bottom:2rem; position:relative;">
+      <span style="width:4px; height:4px; background:var(--fire); border-radius:50%;"></span>CATÁLOGO COMPLETO
+    </div>
+    <h1 style="font-family:var(--font-display); font-weight:800; font-size:clamp(2.4rem,7vw,5rem); line-height:.98; letter-spacing:-.02em; margin-bottom:1.2rem; position:relative; text-transform:none;">
+      <span style="display:block; color:var(--text);">Ache qualquer</span>
+      <span style="display:block; color:transparent; -webkit-text-stroke:1.5px var(--fire);">item do jogo</span>
+    </h1>
+    <p style="font-weight:300; font-size:1.05rem; color:var(--text-dim); max-width:480px; line-height:1.75; margin:0 auto 2.5rem; position:relative; font-family:var(--font-body);">
+      Quase 26 mil itens do Free Fire — busque por nome, ID, categoria, raridade ou versão de lançamento.
+    </p>
+    <button id="heroSearchBtn" style="position:relative; font-family:var(--font-mono); font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; background:var(--fire); color:#fff; border:none; padding:.9rem 2rem; cursor:pointer; font-weight:500;">Buscar itens →</button>
+  </section>
+
+  <div class="page-head" style="display:none;">
+    <h1>Itens</h1>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="itemSearch" placeholder="Buscar por nome ou ID...">
+    </div>
+    <select id="rarityFilter" class="rarity-select">
+      <option value="todos">Toda raridade</option>
+      <option value="RED">Vermelho</option>
+      <option value="ORANGE_PLUS">Laranja+</option>
+      <option value="ORANGE">Laranja</option>
+      <option value="PURPLE_PLUS">Roxo+</option>
+      <option value="PURPLE">Roxo</option>
+      <option value="BLUE">Azul</option>
+      <option value="GREEN">Verde</option>
+      <option value="WHITE">Branco</option>
+    </select>
+    <select id="obFilter" class="rarity-select">
+      <option value="todos">Toda versão</option>
+      <option value="sem">Sem versão</option>
+    </select>
+    <select id="typeFilter" class="rarity-select">
+      <option value="todos">Toda categoria</option>
+      <option value="BUNDLES">Pacote</option>
+      <option value="TOP">Camisa</option>
+      <option value="BOTTOM">Calça</option>
+      <option value="SHOE">Sapato</option>
+      <option value="HEAD">Cabeça/Cabelo</option>
+      <option value="MASK">Máscara</option>
+      <option value="FACEPAINT">Maquiagem facial</option>
+      <option value="WEAPON_SKINS">Skin de arma</option>
+      <option value="GLOO_WALLS">Parede de gloo</option>
+      <option value="FIST_SKINS">Skin de soco</option>
+      <option value="GRENADE_SKIN">Skin de granada</option>
+      <option value="FINAL_SHOT">Tiro final</option>
+      <option value="FINISHING_MOVE">Movimento de finalização</option>
+      <option value="POSTURE">Postura</option>
+      <option value="WEAPON_CRATES">Caixa de arma</option>
+      <option value="EMOTE">Emote</option>
+      <option value="SUPER_EMOTE">Super emote</option>
+      <option value="ARRIVAL_ANIMATION">Animação de chegada</option>
+      <option value="LOOK_CHANGER">Trocador de visual</option>
+      <option value="VEHICLE_SKINS">Skin de veículo</option>
+      <option value="LOOT_BOX">Caixa de loot</option>
+      <option value="BAG_SKINS">Skin de mochila</option>
+      <option value="PARACHUTE">Paraquedas</option>
+      <option value="SKYBOARD">Skyboard</option>
+      <option value="SKYWINGS">Skywings</option>
+      <option value="HYPER_BOOK">Hyperbook</option>
+      <option value="BANNERS">Banner</option>
+      <option value="AVATARS">Foto de perfil</option>
+      <option value="PROFILE_PIN">Pin de perfil</option>
+      <option value="BATTLE_CARD">Cartão de batalha</option>
+      <option value="SKILL_SKINS">Skin de habilidade</option>
+      <option value="MUSIC">Música</option>
+      <option value="VOICE_PACKS">Pacote de voz</option>
+      <option value="PHOTO_FRAME">Moldura de foto</option>
+      <option value="AVATAR_FRAME">Moldura de avatar</option>
+      <option value="PHOTO_POSE">Pose de foto</option>
+      <option value="STICKER">Figurinha</option>
+      <option value="TITLES">Título</option>
+      <option value="CHARACTERS">Personagem</option>
+      <option value="PETS">Mascote</option>
+      <option value="PET_SKILL">Habilidade de mascote</option>
+      <option value="PET_SKIN">Skin de mascote</option>
+      <option value="PET_EMOTE">Emote de mascote</option>
+      <option value="BUNDLE_CREATE">Pacote personalizado</option>
+      <option value="EXCHANGE_TOKENS">Ficha de troca</option>
+      <option value="LOOT_CRATES">Baú</option>
+      <option value="CHOICE_CRATES">Caixa de escolha</option>
+      <option value="VOUCHERS">Cupom</option>
+    </select>
+  </div>
+
+  <div id="itemsStatus" style="font-family:var(--font-mono); font-size:.75rem; color:var(--text-faint); margin-bottom:16px;">carregando catálogo...</div>
+  <div id="itemsGrid"></div>
+  <div id="pagination"></div>
+</main>
+
+<div id="itemModalOverlay">
+  <div id="itemModal">
+    <button id="itemModalClose" aria-label="Fechar">✕</button>
+    <div class="modal-thumb" id="modalThumb"><div class="ph" style="font-family:var(--font-mono); font-size:.65rem; color:var(--text-faint);">sem imagem</div></div>
+    <div class="eyebrow" id="modalCat" style="justify-content:center;"></div>
+    <h3 id="modalName" style="font-size:1.3rem; text-align:center; margin-bottom:6px;"></h3>
+    <div style="text-align:center; margin-bottom:20px;">
+      <span class="rare-badge" id="modalRare" style="font-size:.68rem;"></span>
+    </div>
+
+    <div style="font-family:var(--font-mono); font-size:.68rem; color:var(--text-faint); text-transform:uppercase;">Nome</div>
+    <div class="copy-row">
+      <span id="modalNameValue"></span>
+      <button class="copy-btn" data-copy-target="modalNameValue">copiar</button>
+    </div>
+
+    <div style="font-family:var(--font-mono); font-size:.68rem; color:var(--text-faint); text-transform:uppercase; margin-top:16px;">ID do item</div>
+    <div class="copy-row">
+      <span id="modalIdValue"></span>
+      <button class="copy-btn" data-copy-target="modalIdValue">copiar</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+  const IMG_SOURCES = [
+    { base: 'https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/', key: 'id' },
+    { base: 'https://dl.dir.freefiremobile.com/common/Local/PK/FF_UI_Icon/', key: 'icon' },
+    { base: 'https://freefiremobile-a.akamaihd.net/common/Local/PK/FF_UI_Icon/', key: 'icon' }
+  ];
+  const RARE_COLORS = {
+    WHITE:'#e4e7f0', GREEN:'#26e07a', BLUE:'#2196ff', PURPLE:'#a24bff',
+    PURPLE_PLUS:'#c874ff', ORANGE:'#ff7a1a', ORANGE_PLUS:'#ff9500', RED:'#ff2e2e'
+  };
+  const CAT_LABELS = {
+    BUNDLE_CREATE:'Pacote personalizado', EXCHANGE_TOKENS:'Ficha de troca', BUNDLES:'Pacote',
+    WEAPON_SKINS:'Skin de arma', TOP:'Camisa', LOOT_CRATES:'Baú', BOTTOM:'Calça', SHOE:'Sapato',
+    HEAD:'Cabeça/Cabelo', MASK:'Máscara', AVATARS:'Foto de perfil', BANNERS:'Banner',
+    VOICE_PACKS:'Pacote de voz', CHOICE_CRATES:'Caixa de escolha', VOUCHERS:'Cupom',
+    BAG_SKINS:'Skin de mochila', EMOTE:'Emote', FACEPAINT:'Maquiagem facial', SKYBOARD:'Skyboard',
+    LOOT_BOX:'Caixa de loot', GLOO_WALLS:'Parede de gloo', VEHICLE_SKINS:'Skin de veículo',
+    PARACHUTE:'Paraquedas', WEAPON_CRATES:'Caixa de arma', GRENADE_SKIN:'Skin de granada',
+    PET_SKIN:'Skin de mascote', MUSIC:'Música', PET_EMOTE:'Emote de mascote', TITLES:'Título',
+    CHARACTERS:'Personagem', ARRIVAL_ANIMATION:'Animação de chegada', PROFILE_PIN:'Pin de perfil',
+    FIST_SKINS:'Skin de soco', PHOTO_POSE:'Pose de foto', SKYWINGS:'Skywings', PETS:'Mascote',
+    PHOTO_FRAME:'Moldura de foto', STICKER:'Figurinha', PET_SKILL:'Habilidade de mascote',
+    SKILL_SKINS:'Skin de habilidade', LOOK_CHANGER:'Trocador de visual', POSTURE:'Postura',
+    BATTLE_CARD:'Cartão de batalha', HYPER_BOOK:'Hyperbook', FINAL_SHOT:'Tiro final',
+    FINISHING_MOVE:'Movimento de finalização', SUPER_EMOTE:'Super emote', AVATAR_FRAME:'Moldura de avatar'
+  };
+
+  let allItems = [];
+  let filtered = [];
+  let currentPage = 1;
+  const PAGE_SIZE = 60;
+  let activeType = 'todos';
+  let activeRarity = 'todos';
+  let activeOB = 'todos';
+
+  const grid = document.getElementById('itemsGrid');
+  const status = document.getElementById('itemsStatus');
+  const pagination = document.getElementById('pagination');
+
+  function hexToRgba(hex, alpha){
+    const h = hex.replace('#','');
+    const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function cardHTML(item, idx){
+    const color = RARE_COLORS[item.rare] || '#3A4156';
+    const catLabel = CAT_LABELS[item.cat] || item.cat;
+    const bg = `linear-gradient(160deg, ${hexToRgba(color,0.75)}, ${hexToRgba(color,0.3)} 55%, var(--bg-panel) 100%)`;
+    const obBadge = item.tag ? `<span style="font-family:var(--font-mono); font-size:.52rem; color:var(--text-dim); border:1px solid var(--line-bright); padding:1px 4px;">${item.tag}</span>` : '';
+    return `
+      <article class="panel item-card" data-idx="${idx}" style="background:${bg}; border-color:${color}; border-width:2px; box-shadow:0 0 18px ${hexToRgba(color,0.25)};">
+        <div class="item-thumb" data-icon="${item.icon}" data-id="${item.id}" style="background:${hexToRgba(color,0.35)};">
+          <div class="ph">carregando...</div>
+        </div>
+        <div class="item-name">${item.name}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-family:var(--font-mono); font-size:.56rem; color:var(--signal); text-transform:uppercase;">${catLabel}</span>
+          ${obBadge}
+        </div>
+        <div class="item-meta">
+          <span class="item-id">#${item.id}</span>
+          <span class="rare-badge" style="color:#0c0d10; background:${color}; border:1px solid ${color}; font-weight:700;">${item.rare.replace('_',' ')}</span>
+        </div>
+      </article>`;
+  }
+
+  function loadThumb(thumbEl){
+    const icon = thumbEl.dataset.icon;
+    const id = thumbEl.dataset.id;
+    if ((!icon || icon === 'NONE') && !id) return;
+    let srcIndex = 0;
+    const tryNext = () => {
+      if (srcIndex >= IMG_SOURCES.length) {
+        const fallbackUrl = IMG_SOURCES[0].base + id + '.png';
+        thumbEl.innerHTML = `<a href="${fallbackUrl}" target="_blank" rel="noopener" class="ph" style="text-decoration:underline;">sem imagem<br>(abrir url)</a>`;
+        return;
+      }
+      const source = IMG_SOURCES[srcIndex];
+      const key = source.key === 'id' ? id : icon;
+      if (!key || key === 'NONE') { srcIndex++; tryNext(); return; }
+      const url = source.base + key + '.png';
+      const testImg = new Image();
+      testImg.referrerPolicy = 'no-referrer';
+      testImg.decoding = 'async';
+      testImg.alt = '';
+      testImg.onload = () => { thumbEl.innerHTML=''; thumbEl.appendChild(testImg); };
+      testImg.onerror = () => { srcIndex++; tryNext(); };
+      testImg.src = url;
+    };
+    tryNext();
+  }
+
+  const thumbObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        loadThumb(entry.target);
+        thumbObserver.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '300px 0px' });
+
+  function render(){
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+    grid.innerHTML = pageItems.map((item,i) => cardHTML(item, start+i)).join('');
+    grid.querySelectorAll('.item-thumb').forEach(el => thumbObserver.observe(el));
+
+    status.textContent = filtered.length === 0
+      ? 'nenhum item encontrado'
+      : `mostrando ${start+1}–${Math.min(start+PAGE_SIZE, filtered.length)} de ${filtered.length} itens filtrados`;
+
+    renderPagination(totalPages);
+    window.scrollTo({ top: document.querySelector('.page-head').offsetTop - 20, behavior: 'smooth' });
+  }
+
+  function renderPagination(totalPages){
+    if (filtered.length === 0) { pagination.innerHTML = ''; return; }
+    const pages = new Set([1, totalPages, currentPage, currentPage-1, currentPage+1]);
+    const sorted = [...pages].filter(p => p >= 1 && p <= totalPages).sort((a,b) => a-b);
+
+    let html = `<button class="page-btn" id="pagePrev" ${currentPage===1?'disabled':''}>‹</button>`;
+    let prev = 0;
+    for (const p of sorted) {
+      if (prev && p - prev > 1) html += `<span class="page-dots">···</span>`;
+      html += `<button class="page-btn ${p===currentPage?'active':''}" data-page="${p}">${p}</button>`;
+      prev = p;
+    }
+    html += `<button class="page-btn" id="pageNext" ${currentPage===totalPages?'disabled':''}>›</button>`;
+    html += `<span class="page-jump">ir para <input type="number" id="pageJumpInput" min="1" max="${totalPages}" value="${currentPage}"> de ${totalPages}</span>`;
+    pagination.innerHTML = html;
+
+    pagination.querySelectorAll('[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => { currentPage = Number(btn.dataset.page); render(); });
+    });
+    document.getElementById('pagePrev')?.addEventListener('click', () => { currentPage--; render(); });
+    document.getElementById('pageNext')?.addEventListener('click', () => { currentPage++; render(); });
+    document.getElementById('pageJumpInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const v = Math.min(totalPages, Math.max(1, Number(e.target.value) || 1));
+        currentPage = v; render();
+      }
+    });
+  }
+
+  function applyFilters(){
+    const term = document.getElementById('itemSearch').value.trim().toLowerCase();
+    filtered = allItems.filter(i => {
+      const matchesTerm = !term || i.name.toLowerCase().includes(term) || i.id.includes(term);
+      const matchesType = activeType === 'todos' || i.cat === activeType;
+      const matchesRarity = activeRarity === 'todos' || i.rare === activeRarity;
+      const matchesOB = activeOB === 'todos' || (activeOB === 'sem' ? !i.tag : i.tag === activeOB);
+      return matchesTerm && matchesType && matchesRarity && matchesOB;
+    });
+    currentPage = 1;
+    render();
+  }
+
+  document.getElementById('itemSearch').addEventListener('input', applyFilters);
+  document.getElementById('heroSearchBtn').addEventListener('click', () => {
+    document.querySelector('.toolbar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => document.getElementById('itemSearch').focus(), 400);
+  });
+  document.getElementById('rarityFilter').addEventListener('change', (e) => {
+    activeRarity = e.target.value; applyFilters();
+  });
+  document.getElementById('typeFilter').addEventListener('change', (e) => {
+    activeType = e.target.value; applyFilters();
+  });
+  document.getElementById('obFilter').addEventListener('change', (e) => {
+    activeOB = e.target.value; applyFilters();
+  });
+  // ---------- modal de detalhe do item ----------
+  const overlay = document.getElementById('itemModalOverlay');
+  const modalThumb = document.getElementById('modalThumb');
+  const modalCat = document.getElementById('modalCat');
+  const modalName = document.getElementById('modalName');
+  const modalRare = document.getElementById('modalRare');
+  const modalNameValue = document.getElementById('modalNameValue');
+  const modalIdValue = document.getElementById('modalIdValue');
+
+  function openModal(item){
+    modalThumb.innerHTML = '<div class="ph" style="font-family:var(--font-mono); font-size:.65rem; color:var(--text-faint);">sem imagem</div>';
+    modalThumb.setAttribute('data-icon', item.icon);
+    modalThumb.setAttribute('data-id', item.id);
+    loadThumb(modalThumb);
+    modalCat.textContent = CAT_LABELS[item.cat] || item.cat;
+    modalCat.textContent += item.tag ? ' · ' + item.tag : '';
+    modalName.textContent = item.name;
+    modalNameValue.textContent = item.name;
+    modalIdValue.textContent = item.id;
+    const color = RARE_COLORS[item.rare] || '#5D6376';
+    modalRare.textContent = item.rare.replace('_',' ');
+    modalRare.style.color = color;
+    modalRare.style.border = '1px solid ' + color;
+    overlay.classList.add('open');
+  }
+
+  grid.addEventListener('click', (e) => {
+    const card = e.target.closest('.item-card');
+    if (!card) return;
+    const item = filtered[Number(card.dataset.idx)];
+    if (item) openModal(item);
+  });
+
+  document.getElementById('itemModalClose').addEventListener('click', () => overlay.classList.remove('open'));
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') overlay.classList.remove('open'); });
+
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetEl = document.getElementById(btn.dataset.copyTarget);
+      const text = targetEl.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'copiado ✓';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+      });
+    });
+  });
+
+  fetch('items.json')
+    .then(r => r.json())
+    .then(data => {
+      const tagRank = (tag) => tag ? parseInt(tag.slice(2)) : -1;
+      data.sort((a,b) => {
+        const ra = tagRank(a.tag), rb = tagRank(b.tag);
+        if (ra !== rb) return ra - rb;
+        return parseInt(a.id) - parseInt(b.id);
+      });
+      allItems = data;
+      filtered = data;
+
+      const obSelect = document.getElementById('obFilter');
+      const obValues = [...new Set(data.filter(i => i.tag).map(i => i.tag))]
+        .sort((a,b) => parseInt(b.slice(2)) - parseInt(a.slice(2)));
+      obValues.forEach(ob => {
+        const opt = document.createElement('option');
+        opt.value = ob;
+        opt.textContent = ob;
+        obSelect.appendChild(opt);
+      });
+
+      render();
+    })
+    .catch(() => { status.textContent = 'não foi possível carregar o catálogo de itens.'; });
+</script>
+<script type="module">
+  // Só tenta inicializar o SDK do Discord se o site estiver rodando
+  // dentro do iframe de uma Activity — fora do Discord, o site funciona normal.
+  if (window.location !== window.parent.location) {
+    import('https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.5.0/output/index.mjs')
+      .then(async ({ DiscordSDK, patchUrlMappings }) => {
+        try {
+          // reescreve as URLs das CDNs de imagem pra passar pelo proxy do Discord
+          // (precisa bater com os prefixos cadastrados em Mapeamentos de URL no Portal)
+          patchUrlMappings([
+            { prefix: '/ff-icon', target: 'dl.dir.freefiremobile.com' },
+            { prefix: '/ff-icon2', target: 'freefiremobile-a.akamaihd.net' },
+            { prefix: '/ff-cdn', target: 'cdn.jsdelivr.net' },
+          ]);
+
+          // troque pelo Application ID copiado no Discord Developer Portal
+          const discordSdk = new DiscordSDK('1531189755935592520');
+          await discordSdk.ready();
+          console.log('✅ Rodando dentro do Discord como Activity');
+          document.body.classList.add('in-discord');
+        } catch (e) {
+          console.warn('Discord SDK não inicializou:', e);
+        }
+      });
+  }
+</script>
+</body>
+</html>
