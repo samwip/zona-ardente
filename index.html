@@ -2,6 +2,17 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<script>
+  // Cria uma "trava" que o carregamento de imagens vai esperar.
+  // Fora do Discord, libera na hora. Dentro do Discord, só libera
+  // depois que o patchUrlMappings estiver configurado (lá embaixo no body).
+  window.__discordReady = new Promise((resolve) => {
+    window.__resolveDiscordReady = resolve;
+    if (window.location === window.parent.location) {
+      resolve(); // não está num iframe, libera direto
+    }
+  });
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
 <title>Free Fire Item — Busca de Itens</title>
@@ -292,26 +303,28 @@
     const icon = thumbEl.dataset.icon;
     const id = thumbEl.dataset.id;
     if ((!icon || icon === 'NONE') && !id) return;
-    let srcIndex = 0;
-    const tryNext = () => {
-      if (srcIndex >= IMG_SOURCES.length) {
-        const fallbackUrl = IMG_SOURCES[0].base + id + '.png';
-        thumbEl.innerHTML = `<a href="${fallbackUrl}" target="_blank" rel="noopener" class="ph" style="text-decoration:underline;">sem imagem<br>(abrir url)</a>`;
-        return;
-      }
-      const source = IMG_SOURCES[srcIndex];
-      const key = source.key === 'id' ? id : icon;
-      if (!key || key === 'NONE') { srcIndex++; tryNext(); return; }
-      const url = source.base + key + '.png';
-      const testImg = new Image();
-      testImg.referrerPolicy = 'no-referrer';
-      testImg.decoding = 'async';
-      testImg.alt = '';
-      testImg.onload = () => { thumbEl.innerHTML=''; thumbEl.appendChild(testImg); };
-      testImg.onerror = () => { srcIndex++; tryNext(); };
-      testImg.src = url;
-    };
-    tryNext();
+    window.__discordReady.then(() => {
+      let srcIndex = 0;
+      const tryNext = () => {
+        if (srcIndex >= IMG_SOURCES.length) {
+          const fallbackUrl = IMG_SOURCES[0].base + id + '.png';
+          thumbEl.innerHTML = `<a href="${fallbackUrl}" target="_blank" rel="noopener" class="ph" style="text-decoration:underline;">sem imagem<br>(abrir url)</a>`;
+          return;
+        }
+        const source = IMG_SOURCES[srcIndex];
+        const key = source.key === 'id' ? id : icon;
+        if (!key || key === 'NONE') { srcIndex++; tryNext(); return; }
+        const url = source.base + key + '.png';
+        const testImg = new Image();
+        testImg.referrerPolicy = 'no-referrer';
+        testImg.decoding = 'async';
+        testImg.alt = '';
+        testImg.onload = () => { thumbEl.innerHTML=''; thumbEl.appendChild(testImg); };
+        testImg.onerror = () => { srcIndex++; tryNext(); };
+        testImg.src = url;
+      };
+      tryNext();
+    });
   }
 
   const thumbObserver = new IntersectionObserver((entries) => {
@@ -486,16 +499,18 @@
             { prefix: '/ff-icon2', target: 'freefiremobile-a.akamaihd.net' },
             { prefix: '/ff-cdn', target: 'cdn.jsdelivr.net' },
           ]);
+          window.__resolveDiscordReady(); // libera o carregamento de imagens agora que já reescreveu as URLs
 
-          // troque pelo Application ID copiado no Discord Developer Portal
           const discordSdk = new DiscordSDK('1531189755935592520');
           await discordSdk.ready();
           console.log('✅ Rodando dentro do Discord como Activity');
           document.body.classList.add('in-discord');
         } catch (e) {
           console.warn('Discord SDK não inicializou:', e);
+          window.__resolveDiscordReady(); // libera mesmo se der erro, pra não travar o site pra sempre
         }
-      });
+      })
+      .catch(() => window.__resolveDiscordReady());
   }
 </script>
 </body>
