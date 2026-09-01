@@ -193,6 +193,7 @@
       <option value="PET_SKILL">Habilidade de mascote</option>
       <option value="PET_SKIN">Skin de mascote</option>
       <option value="PET_EMOTE">Emote de mascote</option>
+      <option value="PYRO_PET">Mascote de fogo</option>
       <option value="BUNDLE_CREATE">Pacote personalizado</option>
       <option value="EXCHANGE_TOKENS">Ficha de troca</option>
       <option value="LOOT_CRATES">Baú</option>
@@ -257,7 +258,7 @@
     PET_SKIN:'Skin de mascote', MUSIC:'Música', PET_EMOTE:'Emote de mascote', TITLES:'Título',
     CHARACTERS:'Personagem', ARRIVAL_ANIMATION:'Animação de chegada', PROFILE_PIN:'Pin de perfil',
     FIST_SKINS:'Skin de soco', PHOTO_POSE:'Pose de foto', SKYWINGS:'Skywings', PETS:'Mascote',
-    PHOTO_FRAME:'Moldura de foto', STICKER:'Figurinha', PET_SKILL:'Habilidade de mascote',
+    PHOTO_FRAME:'Moldura de foto', STICKER:'Figurinha', PET_SKILL:'Habilidade de mascote', PYRO_PET:'Mascote de fogo',
     SKILL_SKINS:'Skin de habilidade', LOOK_CHANGER:'Trocador de visual', POSTURE:'Postura',
     BATTLE_CARD:'Cartão de batalha', HYPER_BOOK:'Hyperbook', FINAL_SHOT:'Tiro final',
     FINISHING_MOVE:'Movimento de finalização', SUPER_EMOTE:'Super emote', AVATAR_FRAME:'Moldura de avatar'
@@ -507,22 +508,9 @@
           window.__resolveDiscordReady(); // libera o carregamento de imagens agora que já reescreveu as URLs
 
           const discordSdk = new DiscordSDK('1531189755935592520');
-await discordSdk.ready();
-
-// Configura o status como estático para o Discord não tratar como partida/lobby
-try {
-  await discordSdk.commands.setActivity({
-    activity: {
-      details: "Consultando Itens",
-      state: "No Catálogo",
-    },
-  });
-} catch (err) {
-  console.log("Erro ao definir atividade:", err);
-}
-
-console.log('✅ Rodando dentro do Discord como Activity');
-document.body.classList.add('in-discord');
+          await discordSdk.ready();
+          console.log('✅ Rodando dentro do Discord como Activity');
+          document.body.classList.add('in-discord');
         } catch (e) {
           console.warn('Discord SDK não inicializou:', e);
           window.__resolveDiscordReady(); // libera mesmo se der erro, pra não travar o site pra sempre
