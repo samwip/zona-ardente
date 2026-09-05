@@ -200,6 +200,9 @@
       <option value="CHOICE_CRATES">Caixa de escolha</option>
       <option value="VOUCHERS">Cupom</option>
     </select>
+    <select id="weaponFilter" class="rarity-select">
+      <option value="todos">Toda arma</option>
+    </select>
   </div>
 
   <div id="itemsStatus" style="font-family:var(--font-mono); font-size:.75rem; color:var(--text-faint); margin-bottom:16px;">carregando catálogo...</div>
@@ -271,6 +274,7 @@
   let activeType = 'todos';
   let activeRarity = 'todos';
   let activeOB = 'todos';
+  let activeWeapon = 'todos';
 
   const grid = document.getElementById('itemsGrid');
   const status = document.getElementById('itemsStatus');
@@ -293,6 +297,7 @@
           <div class="ph">carregando...</div>
         </div>
         <div class="item-name">${item.name}</div>
+        ${item.name_pt ? `<div style="font-size:.62rem; color:var(--text-faint); margin-top:-4px;">${item.name_pt}</div>` : ''}
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-family:var(--font-mono); font-size:.56rem; color:var(--signal); text-transform:uppercase;">${catLabel}</span>
           ${obBadge}
@@ -388,11 +393,12 @@
   function applyFilters(){
     const term = document.getElementById('itemSearch').value.trim().toLowerCase();
     filtered = allItems.filter(i => {
-      const matchesTerm = !term || i.name.toLowerCase().includes(term) || i.id.includes(term);
+      const matchesTerm = !term || i.name.toLowerCase().includes(term) || (i.name_pt && i.name_pt.toLowerCase().includes(term)) || i.id.includes(term);
       const matchesType = activeType === 'todos' || i.cat === activeType;
       const matchesRarity = activeRarity === 'todos' || i.rare === activeRarity;
       const matchesOB = activeOB === 'todos' || (activeOB === 'sem' ? !i.tag : i.tag === activeOB);
-      return matchesTerm && matchesType && matchesRarity && matchesOB;
+      const matchesWeapon = activeWeapon === 'todos' || i.weapon === activeWeapon;
+      return matchesTerm && matchesType && matchesRarity && matchesOB && matchesWeapon;
     });
     currentPage = 1;
     render();
@@ -412,6 +418,9 @@
   document.getElementById('obFilter').addEventListener('change', (e) => {
     activeOB = e.target.value; applyFilters();
   });
+  document.getElementById('weaponFilter').addEventListener('change', (e) => {
+    activeWeapon = e.target.value; applyFilters();
+  });
   // ---------- modal de detalhe do item ----------
   const overlay = document.getElementById('itemModalOverlay');
   const modalThumb = document.getElementById('modalThumb');
@@ -428,7 +437,7 @@
     loadThumb(modalThumb);
     modalCat.textContent = CAT_LABELS[item.cat] || item.cat;
     modalCat.textContent += item.tag ? ' · ' + item.tag : '';
-    modalName.textContent = item.name;
+    modalName.textContent = item.name + (item.name_pt ? ' — ' + item.name_pt : '');
     modalNameValue.textContent = item.name;
     modalIdValue.textContent = item.id;
     const color = RARE_COLORS[item.rare] || '#5D6376';
@@ -485,6 +494,15 @@
         opt.value = ob;
         opt.textContent = ob;
         obSelect.appendChild(opt);
+      });
+
+      const weaponSelect = document.getElementById('weaponFilter');
+      const weaponValues = [...new Set(data.filter(i => i.weapon).map(i => i.weapon))].sort();
+      weaponValues.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = w;
+        weaponSelect.appendChild(opt);
       });
 
       render();
