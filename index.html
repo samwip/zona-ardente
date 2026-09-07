@@ -203,6 +203,9 @@
     <select id="weaponFilter" class="rarity-select">
       <option value="todos">Toda arma</option>
     </select>
+    <select id="passFilter" class="rarity-select">
+      <option value="todos">Todo passe</option>
+    </select>
   </div>
 
   <div id="itemsStatus" style="font-family:var(--font-mono); font-size:.75rem; color:var(--text-faint); margin-bottom:16px;">carregando catálogo...</div>
@@ -275,6 +278,7 @@
   let activeRarity = 'todos';
   let activeOB = 'todos';
   let activeWeapon = 'todos';
+  let activePass = 'todos';
 
   const grid = document.getElementById('itemsGrid');
   const status = document.getElementById('itemsStatus');
@@ -291,6 +295,7 @@
     const catLabel = CAT_LABELS[item.cat] || item.cat;
     const bg = `linear-gradient(160deg, ${hexToRgba(color,0.75)}, ${hexToRgba(color,0.3)} 55%, var(--bg-panel) 100%)`;
     const obBadge = item.tag ? `<span style="font-family:var(--font-mono); font-size:.52rem; color:var(--text-dim); border:1px solid var(--line-bright); padding:1px 4px;">${item.tag}</span>` : '';
+    const passBadge = item.pass ? `<span style="font-family:var(--font-mono); font-size:.52rem; color:var(--fire); border:1px solid var(--fire-dim); padding:1px 4px;">P${item.pass}</span>` : '';
     return `
       <article class="panel item-card" data-idx="${idx}" style="background:${bg}; border-color:${color}; border-width:2px; box-shadow:0 0 18px ${hexToRgba(color,0.25)};">
         <div class="item-thumb" data-icon="${item.icon}" data-id="${item.id}" style="background:${hexToRgba(color,0.35)};">
@@ -300,7 +305,7 @@
         ${item.name_pt ? `<div style="font-size:.62rem; color:var(--text-faint); margin-top:-4px;">${item.name_pt}</div>` : ''}
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-family:var(--font-mono); font-size:.56rem; color:var(--signal); text-transform:uppercase;">${catLabel}</span>
-          ${obBadge}
+          ${obBadge}${passBadge}
         </div>
         <div class="item-meta">
           <span class="item-id">#${item.id}</span>
@@ -398,7 +403,8 @@
       const matchesRarity = activeRarity === 'todos' || i.rare === activeRarity;
       const matchesOB = activeOB === 'todos' || (activeOB === 'sem' ? !i.tag : i.tag === activeOB);
       const matchesWeapon = activeWeapon === 'todos' || i.weapon === activeWeapon;
-      return matchesTerm && matchesType && matchesRarity && matchesOB && matchesWeapon;
+      const matchesPass = activePass === 'todos' || i.pass === activePass;
+      return matchesTerm && matchesType && matchesRarity && matchesOB && matchesWeapon && matchesPass;
     });
     currentPage = 1;
     render();
@@ -420,6 +426,9 @@
   });
   document.getElementById('weaponFilter').addEventListener('change', (e) => {
     activeWeapon = e.target.value; applyFilters();
+  });
+  document.getElementById('passFilter').addEventListener('change', (e) => {
+    activePass = e.target.value; applyFilters();
   });
   // ---------- modal de detalhe do item ----------
   const overlay = document.getElementById('itemModalOverlay');
@@ -503,6 +512,15 @@
         opt.value = w;
         opt.textContent = w;
         weaponSelect.appendChild(opt);
+      });
+
+      const passSelect = document.getElementById('passFilter');
+      const passValues = [...new Set(data.filter(i => i.pass).map(i => i.pass))].sort((a,b) => parseInt(a) - parseInt(b));
+      passValues.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = 'Passe ' + p;
+        passSelect.appendChild(opt);
       });
 
       render();
