@@ -223,9 +223,11 @@
       <span class="rare-badge" id="modalRare" style="font-size:.68rem;"></span>
     </div>
 
-    <div id="modalStatsSection" style="display:none; margin-bottom:16px;">
-      <div style="font-family:var(--font-mono); font-size:.68rem; color:var(--text-faint); text-transform:uppercase; margin-bottom:8px;">Atributos</div>
-      <div id="modalStatsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+    <div id="modalStatsSection" style="display:none; margin-bottom:18px;">
+      <div style="font-family:var(--font-display); font-weight:700; font-size:.9rem; color:var(--fire); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+        <span>⚔️</span> Atributos da skin
+      </div>
+      <div id="modalStatsList" style="display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
     <div style="font-family:var(--font-mono); font-size:.68rem; color:var(--text-faint); text-transform:uppercase;">Nome</div>
@@ -464,12 +466,31 @@
     const statsSection = document.getElementById('modalStatsSection');
     const statsList = document.getElementById('modalStatsList');
     if (item.statsText && item.statsText.length) {
+      const STAT_ICONS = [
+        [/dano/i, '💥'], [/munição/i, '🔫'], [/precisão/i, '🎯'],
+        [/recarga/i, '🔄'], [/disparo/i, '⚡'], [/alcance/i, '📏'],
+        [/velocidade/i, '🏃'], [/energia/i, '🔋'], [/vida/i, '❤️'],
+      ];
+      const pickIcon = (label) => {
+        const found = STAT_ICONS.find(([re]) => re.test(label));
+        return found ? found[1] : '⚙️';
+      };
       statsList.innerHTML = item.statsText.map(txt => {
         const isUp = txt.includes('↑');
-        const corSeta = isUp ? 'var(--signal)' : 'var(--fire)';
-        return `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-panel-2); border:1px solid var(--line); padding:8px 12px; font-size:.82rem;">
-          <span>${txt.replace(/[↑↓]/, '').trim()}</span>
-          <span style="color:${corSeta}; font-weight:700;">${isUp ? '↑' : '↓'}</span>
+        const [labelParte, valorParte] = txt.replace(/[↑↓]/, '').split(':');
+        const label = (labelParte || '').trim();
+        const valor = (valorParte || '').trim();
+        const cor = isUp ? 'var(--signal)' : 'var(--fire)';
+        const bg = isUp ? 'linear-gradient(90deg, rgba(47,226,201,.14), transparent 70%)' : 'linear-gradient(90deg, rgba(162,56,255,.16), transparent 70%)';
+        return `<div style="display:flex; justify-content:space-between; align-items:center; background:${bg}; border:1px solid ${cor}; border-left-width:4px; border-radius:6px; padding:10px 14px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.15rem;">${pickIcon(label)}</span>
+            <span style="font-size:.85rem; font-family:var(--font-body); font-weight:500;">${label}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-family:var(--font-mono); font-weight:700; font-size:.95rem; color:${cor};">${valor}</span>
+            <span style="color:${cor}; font-size:1.1rem; font-weight:900;">${isUp ? '▲' : '▼'}</span>
+          </div>
         </div>`;
       }).join('');
       statsSection.style.display = 'block';
