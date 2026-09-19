@@ -223,6 +223,11 @@
       <span class="rare-badge" id="modalRare" style="font-size:.68rem;"></span>
     </div>
 
+    <div id="modalStatsSection" style="display:none; margin-bottom:16px;">
+      <div style="font-family:var(--font-mono); font-size:.68rem; color:var(--text-faint); text-transform:uppercase; margin-bottom:8px;">Atributos</div>
+      <div id="modalStatsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+    </div>
+
     <div style="font-family:var(--font-mono); font-size:.68rem; color:var(--text-faint); text-transform:uppercase;">Nome</div>
     <div class="copy-row">
       <span id="modalNameValue"></span>
@@ -455,6 +460,23 @@
     modalRare.textContent = item.rare.replace('_',' ');
     modalRare.style.color = color;
     modalRare.style.border = '1px solid ' + color;
+
+    const statsSection = document.getElementById('modalStatsSection');
+    const statsList = document.getElementById('modalStatsList');
+    if (item.statsText && item.statsText.length) {
+      statsList.innerHTML = item.statsText.map(txt => {
+        const isUp = txt.includes('↑');
+        const corSeta = isUp ? 'var(--signal)' : 'var(--fire)';
+        return `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-panel-2); border:1px solid var(--line); padding:8px 12px; font-size:.82rem;">
+          <span>${txt.replace(/[↑↓]/, '').trim()}</span>
+          <span style="color:${corSeta}; font-weight:700;">${isUp ? '↑' : '↓'}</span>
+        </div>`;
+      }).join('');
+      statsSection.style.display = 'block';
+    } else {
+      statsSection.style.display = 'none';
+    }
+
     overlay.classList.add('open');
   }
 
